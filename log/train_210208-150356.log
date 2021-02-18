@@ -252,3 +252,109 @@
 21-02-09 15:31:19.910 - INFO: ===> Epoch 54 Complete: Avg. Loss: 0.0233
 21-02-09 15:58:20.638 - INFO: ===> Epoch 55 Complete: Avg. Loss: 0.0234
 21-02-09 16:25:19.675 - INFO: ===> Epoch 56 Complete: Avg. Loss: 0.0233
+21-02-09 16:52:14.862 - INFO: ===> Epoch 57 Complete: Avg. Loss: 0.0235
+21-02-09 17:19:35.276 - INFO: ===> Epoch 58 Complete: Avg. Loss: 0.0233
+21-02-09 17:46:53.037 - INFO: ===> Epoch 59 Complete: Avg. Loss: 0.0233
+21-02-09 17:46:53.173 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_59.pth
+21-02-09 18:14:37.947 - INFO: ===> Epoch 60 Complete: Avg. Loss: 0.0232
+21-02-09 18:42:03.684 - INFO: ===> Epoch 61 Complete: Avg. Loss: 0.0232
+21-02-09 19:09:16.657 - INFO: ===> Epoch 62 Complete: Avg. Loss: 0.0231
+21-02-09 19:36:08.769 - INFO: ===> Epoch 63 Complete: Avg. Loss: 0.0231
+21-02-09 20:02:59.939 - INFO: ===> Epoch 64 Complete: Avg. Loss: 0.0232
+21-02-09 20:29:57.924 - INFO: ===> Epoch 65 Complete: Avg. Loss: 0.0232
+21-02-09 20:57:00.812 - INFO: ===> Epoch 66 Complete: Avg. Loss: 0.0231
+21-02-09 21:23:56.403 - INFO: ===> Epoch 67 Complete: Avg. Loss: 0.0232
+21-02-09 21:50:59.206 - INFO: ===> Epoch 68 Complete: Avg. Loss: 0.0232
+21-02-09 22:17:58.467 - INFO: ===> Epoch 69 Complete: Avg. Loss: 0.0231
+21-02-09 22:17:58.610 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_69.pth
+21-02-09 22:44:58.952 - INFO: ===> Epoch 70 Complete: Avg. Loss: 0.0231
+21-02-09 23:12:03.691 - INFO: ===> Epoch 71 Complete: Avg. Loss: 0.0231
+21-02-09 23:38:59.876 - INFO: ===> Epoch 72 Complete: Avg. Loss: 0.0231
+21-02-10 00:05:52.031 - INFO: ===> Epoch 73 Complete: Avg. Loss: 0.0229
+21-02-10 00:32:38.733 - INFO: ===> Epoch 74 Complete: Avg. Loss: 0.0229
+21-02-10 00:32:38.737 - INFO: Learning rate decay: lr=1e-05
+21-02-10 00:59:25.112 - INFO: ===> Epoch 75 Complete: Avg. Loss: 0.0225
+21-02-10 01:26:19.885 - INFO: ===> Epoch 76 Complete: Avg. Loss: 0.0226
+21-02-10 01:53:15.689 - INFO: ===> Epoch 77 Complete: Avg. Loss: 0.0223
+21-02-10 02:19:58.579 - INFO: ===> Epoch 78 Complete: Avg. Loss: 0.0224
+21-02-10 02:46:56.029 - INFO: ===> Epoch 79 Complete: Avg. Loss: 0.0225
+21-02-10 02:46:56.140 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_79.pth
+21-02-10 03:13:57.196 - INFO: ===> Epoch 80 Complete: Avg. Loss: 0.0225
+21-02-10 03:40:57.076 - INFO: ===> Epoch 81 Complete: Avg. Loss: 0.0225
+21-02-10 04:08:08.138 - INFO: ===> Epoch 82 Complete: Avg. Loss: 0.0223
+21-02-10 04:35:10.266 - INFO: ===> Epoch 83 Complete: Avg. Loss: 0.0224
+21-02-10 05:02:17.163 - INFO: ===> Epoch 84 Complete: Avg. Loss: 0.0225
+21-02-10 05:29:12.201 - INFO: ===> Epoch 85 Complete: Avg. Loss: 0.0224
+21-02-10 05:56:08.115 - INFO: ===> Epoch 86 Complete: Avg. Loss: 0.0225
+21-02-10 06:23:06.320 - INFO: ===> Epoch 87 Complete: Avg. Loss: 0.0224
+21-02-10 06:49:51.347 - INFO: ===> Epoch 88 Complete: Avg. Loss: 0.0223
+21-02-10 07:16:42.353 - INFO: ===> Epoch 89 Complete: Avg. Loss: 0.0224
+21-02-10 07:16:42.468 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_89.pth
+21-02-10 07:43:42.640 - INFO: ===> Epoch 90 Complete: Avg. Loss: 0.0224
+21-02-10 08:10:46.546 - INFO: ===> Epoch 91 Complete: Avg. Loss: 0.0222
+21-02-10 08:37:53.861 - INFO: ===> Epoch 92 Complete: Avg. Loss: 0.0224
+21-02-10 09:04:53.979 - INFO: ===> Epoch 93 Complete: Avg. Loss: 0.0224
+21-02-10 09:31:46.580 - INFO: ===> Epoch 94 Complete: Avg. Loss: 0.0224
+21-02-10 09:58:51.746 - INFO: ===> Epoch 95 Complete: Avg. Loss: 0.0223
+21-02-10 10:25:50.361 - INFO: ===> Epoch 96 Complete: Avg. Loss: 0.0224
+21-02-10 10:52:49.552 - INFO: ===> Epoch 97 Complete: Avg. Loss: 0.0223
+21-02-10 11:19:47.034 - INFO: ===> Epoch 98 Complete: Avg. Loss: 0.0224
+21-02-10 11:46:33.720 - INFO: ===> Epoch 99 Complete: Avg. Loss: 0.0223
+21-02-10 11:46:33.829 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_99.pth
+21-02-10 12:13:37.147 - INFO: ===> Epoch 100 Complete: Avg. Loss: 0.0223
+21-02-10 12:40:41.572 - INFO: ===> Epoch 101 Complete: Avg. Loss: 0.0224
+21-02-10 13:07:35.924 - INFO: ===> Epoch 102 Complete: Avg. Loss: 0.0224
+21-02-10 13:34:27.144 - INFO: ===> Epoch 103 Complete: Avg. Loss: 0.0223
+21-02-10 14:00:58.942 - INFO: ===> Epoch 104 Complete: Avg. Loss: 0.0222
+21-02-10 14:27:49.248 - INFO: ===> Epoch 105 Complete: Avg. Loss: 0.0223
+21-02-10 14:54:31.802 - INFO: ===> Epoch 106 Complete: Avg. Loss: 0.0224
+21-02-10 15:21:31.800 - INFO: ===> Epoch 107 Complete: Avg. Loss: 0.0224
+21-02-10 15:48:33.313 - INFO: ===> Epoch 108 Complete: Avg. Loss: 0.0224
+21-02-10 16:15:31.032 - INFO: ===> Epoch 109 Complete: Avg. Loss: 0.0222
+21-02-10 16:15:31.174 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_109.pth
+21-02-10 16:42:24.849 - INFO: ===> Epoch 110 Complete: Avg. Loss: 0.0222
+21-02-10 17:09:15.407 - INFO: ===> Epoch 111 Complete: Avg. Loss: 0.0222
+21-02-10 17:36:09.148 - INFO: ===> Epoch 112 Complete: Avg. Loss: 0.0222
+21-02-10 18:03:09.268 - INFO: ===> Epoch 113 Complete: Avg. Loss: 0.0223
+21-02-10 18:29:53.999 - INFO: ===> Epoch 114 Complete: Avg. Loss: 0.0223
+21-02-10 18:56:38.383 - INFO: ===> Epoch 115 Complete: Avg. Loss: 0.0223
+21-02-10 19:23:31.091 - INFO: ===> Epoch 116 Complete: Avg. Loss: 0.0223
+21-02-10 19:50:16.457 - INFO: ===> Epoch 117 Complete: Avg. Loss: 0.0223
+21-02-10 20:16:57.125 - INFO: ===> Epoch 118 Complete: Avg. Loss: 0.0222
+21-02-10 20:43:47.707 - INFO: ===> Epoch 119 Complete: Avg. Loss: 0.0223
+21-02-10 20:43:47.819 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_119.pth
+21-02-10 21:10:32.129 - INFO: ===> Epoch 120 Complete: Avg. Loss: 0.0223
+21-02-10 21:37:28.767 - INFO: ===> Epoch 121 Complete: Avg. Loss: 0.0223
+21-02-10 22:04:21.376 - INFO: ===> Epoch 122 Complete: Avg. Loss: 0.0223
+21-02-10 22:31:22.196 - INFO: ===> Epoch 123 Complete: Avg. Loss: 0.0222
+21-02-10 22:58:24.128 - INFO: ===> Epoch 124 Complete: Avg. Loss: 0.0222
+21-02-10 23:25:22.693 - INFO: ===> Epoch 125 Complete: Avg. Loss: 0.0222
+21-02-10 23:52:11.559 - INFO: ===> Epoch 126 Complete: Avg. Loss: 0.0222
+21-02-11 00:19:07.868 - INFO: ===> Epoch 127 Complete: Avg. Loss: 0.0222
+21-02-11 00:46:02.963 - INFO: ===> Epoch 128 Complete: Avg. Loss: 0.0223
+21-02-11 01:12:54.649 - INFO: ===> Epoch 129 Complete: Avg. Loss: 0.0221
+21-02-11 01:12:54.793 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_129.pth
+21-02-11 01:39:59.945 - INFO: ===> Epoch 130 Complete: Avg. Loss: 0.0222
+21-02-11 02:07:06.622 - INFO: ===> Epoch 131 Complete: Avg. Loss: 0.0222
+21-02-11 02:33:53.924 - INFO: ===> Epoch 132 Complete: Avg. Loss: 0.0223
+21-02-11 03:00:37.768 - INFO: ===> Epoch 133 Complete: Avg. Loss: 0.0222
+21-02-11 03:27:19.116 - INFO: ===> Epoch 134 Complete: Avg. Loss: 0.0223
+21-02-11 03:54:12.050 - INFO: ===> Epoch 135 Complete: Avg. Loss: 0.0222
+21-02-11 04:21:06.488 - INFO: ===> Epoch 136 Complete: Avg. Loss: 0.0222
+21-02-11 04:47:48.843 - INFO: ===> Epoch 137 Complete: Avg. Loss: 0.0221
+21-02-11 05:14:36.383 - INFO: ===> Epoch 138 Complete: Avg. Loss: 0.0223
+21-02-11 05:41:31.420 - INFO: ===> Epoch 139 Complete: Avg. Loss: 0.0221
+21-02-11 05:41:31.528 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_139.pth
+21-02-11 06:08:31.344 - INFO: ===> Epoch 140 Complete: Avg. Loss: 0.0221
+21-02-11 06:35:31.312 - INFO: ===> Epoch 141 Complete: Avg. Loss: 0.0222
+21-02-11 07:02:23.172 - INFO: ===> Epoch 142 Complete: Avg. Loss: 0.0221
+21-02-11 07:29:13.466 - INFO: ===> Epoch 143 Complete: Avg. Loss: 0.0222
+21-02-11 07:56:02.693 - INFO: ===> Epoch 144 Complete: Avg. Loss: 0.0222
+21-02-11 08:23:10.462 - INFO: ===> Epoch 145 Complete: Avg. Loss: 0.0222
+21-02-11 08:50:15.801 - INFO: ===> Epoch 146 Complete: Avg. Loss: 0.0223
+21-02-11 09:17:13.700 - INFO: ===> Epoch 147 Complete: Avg. Loss: 0.0222
+21-02-11 09:44:08.812 - INFO: ===> Epoch 148 Complete: Avg. Loss: 0.0220
+21-02-11 10:11:01.446 - INFO: ===> Epoch 149 Complete: Avg. Loss: 0.0222
+21-02-11 10:11:01.453 - INFO: Learning rate decay: lr=1.0000000000000002e-06
+21-02-11 10:11:01.577 - INFO: Checkpoint saved to weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_149.pth
+21-02-11 10:37:56.966 - INFO: ===> Epoch 150 Complete: Avg. Loss: 0.0222
