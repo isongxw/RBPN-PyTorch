@@ -17,6 +17,8 @@ import time
 import cv2
 import math
 import pdb
+import logging
+import utils
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
@@ -31,8 +33,11 @@ parser.add_argument('--threads', type=int, default=1,
 parser.add_argument('--seed', type=int, default=123,
                     help='random seed to use. Default=123')
 parser.add_argument('--gpus', default=1, type=int, help='number of gpu')
-parser.add_argument('--data_dir', type=str, default='../datasets/ntire21/val/val_sharp')
-parser.add_argument('--file_list', type=str, default='val.txt')
+parser.add_argument('--HR_dir', type=str,
+                    default='../datasets/ntire21/val/val_sharp')
+parser.add_argument('--LR_dir', type=str,
+                    default='../datasets/ntire21/val/val_sharp_bicubic/X4')
+parser.add_argument('--file_list', type=str, default='NTIRE21/val.txt')
 parser.add_argument('--other_dataset', type=bool, default=True,
                     help="use other dataset than vimeo-90k")
 parser.add_argument('--future_frame', type=bool,
@@ -40,15 +45,20 @@ parser.add_argument('--future_frame', type=bool,
 parser.add_argument('--nFrames', type=int, default=7)
 parser.add_argument('--model_type', type=str, default='RBPN')
 parser.add_argument('--residual', type=bool, default=False)
-parser.add_argument('--output', default='Results/',
+parser.add_argument('--output', default='Results',
                     help='Location to save checkpoint models')
-parser.add_argument('--model', default='weights/4x_ubuntu-SYS-7049GP-TRTRBPNF7_epoch_49.pth',
+parser.add_argument('--model', default='weights/4x_N7_epoch_149.pth',
                     help='sr pretrained base model')
 
 opt = parser.parse_args()
 
 gpus_list = [3]
-print(opt)
+
+utils.setup_logger('base', 'log/test', 'test',
+                   level=logging.INFO, screen=True, tofile=True)
+logger = logging.getLogger('base')
+
+logger.info(opt)
 
 cuda = opt.gpu_mode
 if cuda and not torch.cuda.is_available():
@@ -58,13 +68,13 @@ torch.manual_seed(opt.seed)
 if cuda:
     torch.cuda.manual_seed(opt.seed)
 
-print('===> Loading datasets')
-test_set = get_test_set(opt.data_dir, opt.nFrames, opt.upscale_factor,
+logger.info('Loading datasets')
+test_set = get_test_set(opt.LR_dir, opt.HR_dir, opt.nFrames, opt.upscale_factor,
                         opt.file_list, opt.other_dataset, opt.future_frame)
 testing_data_loader = DataLoader(
     dataset=test_set, num_workers=opt.threads, batch_size=opt.testBatchSize, shuffle=False)
 
-print('===> Building model ', opt.model_type)
+logger.info('Building model {}'.format(opt.model_type))
 if opt.model_type == 'RBPN':
     model = RBPN(num_channels=3, base_filter=256,  feat=64, num_stages=3,
                  n_resblock=5, nFrames=opt.nFrames, scale_factor=opt.upscale_factor)
@@ -74,7 +84,7 @@ if cuda:
 
 model.load_state_dict(torch.load(
     opt.model, map_location=lambda storage, loc: storage))
-print('Pre-trained SR model is loaded.')
+logger.info('Pre-trained SR model is loaded.')
 
 if cuda:
     model = model.cuda(gpus_list[0])
@@ -84,8 +94,13 @@ def eval():
     model.eval()
     count = 1
     avg_psnr_predicted = 0.0
+    avg_ssim_predicted = 0.0
+    avg_time_predicted = 0.0
     for batch in testing_data_loader:
-        input, target, neigbor, flow, bicubic = batch[0], batch[1], batch[2], batch[3], batch[4]
+        input, target, neigbor, flow, bicubic, filename = batch[
+            0], batch[1], batch[2], batch[3], batch[4], batch[5][0]
+        cur_video = filename.split('/')[-2]
+        cur_frame = filename.split('/')[-1]
 
         with torch.no_grad():
             input = Variable(input).cuda(gpus_list[0])
@@ -106,32 +121,34 @@ def eval():
             prediction = prediction + bicubic
 
         t1 = time.time()
-        
-        save_img(prediction.cpu().data, str(count), True)
-        save_img(target, str(count), False)
 
-        prediction = prediction.cpu()
-        prediction = prediction.data[0].numpy().astype(np.float32)
-        prediction = (prediction*255.).astype(np.uint8)
+        save_img(prediction.cpu().data, cur_video + '_' + cur_frame, False)
 
-        target = target.squeeze().numpy().astype(np.float32)
-        target = (target*255.).astype(np.uint8)
+        prediction = utils.tensor2img(prediction)
+
+        target = utils.tensor2img(target)
 
         psnr_predicted = PSNR(target, prediction)
+        ssim_predicted = SSIM(target, prediction)
+        time_predicted = t1 - t0
         avg_psnr_predicted += psnr_predicted
+        avg_ssim_predicted += ssim_predicted
+        avg_time_predicted += time_predicted
         count += 1
-        print("===> Processing: %s || PSNR: %.4f || Timer: %.4f sec." %
-              (str(count), psnr_predicted, (t1 - t0)))
 
-    print("PSNR_predicted=", avg_psnr_predicted/count)
+        logger.info("Processing: %s || PSNR: %.4f || SSIM: %.4f || Timer: %.4f sec." %
+                    (cur_video + '_' + cur_frame, psnr_predicted, ssim_predicted, time_predicted))
+
+    logger.info("AVG_PSNR = {}".format(avg_psnr_predicted / count))
+    logger.info("AVG_SSIM = {}".format(avg_ssim_predicted / count))
+    logger.info("AVG_TIME = {}".format(avg_time_predicted / count))
 
 
 def save_img(img, img_name, pred_flag):
     save_img = img.squeeze().clamp(0, 1).numpy().transpose(1, 2, 0)
 
     # save img
-    save_dir = os.path.join(opt.output, opt.data_dir, os.path.splitext(
-        opt.file_list)[0]+'_'+str(opt.upscale_factor)+'x')
+    save_dir = opt.output
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -139,7 +156,8 @@ def save_img(img, img_name, pred_flag):
         save_fn = save_dir + '/' + img_name+'_' + \
             opt.model_type+'F'+str(opt.nFrames)+'.png'
     else:
-        save_fn = save_dir + '/' + img_name+'.png'
+        save_fn = save_dir + '/' + img_name
+
     cv2.imwrite(save_fn, cv2.cvtColor(
         save_img*255, cv2.COLOR_BGR2RGB),  [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
@@ -149,9 +167,11 @@ def PSNR(res_img, ref_img):
     return psnr
 
 
-def SSIM(ref_img, res_img):
-    ssim = structural_similarity(ref_img, res_img, multichannel=True, gaussian_weights=True, use_sample_covariance=False)
+def SSIM(res_img, ref_img):
+    ssim = structural_similarity(
+        ref_img, res_img, multichannel=True, gaussian_weights=True, use_sample_covariance=False)
     return ssim
+
 
 def chop_forward(x, neigbor, flow, model, scale, shave=8, min_size=2000, nGPUs=opt.gpus):
     b, c, h, w = x.size()
@@ -200,5 +220,4 @@ def chop_forward(x, neigbor, flow, model, scale, shave=8, min_size=2000, nGPUs=o
     return output
 
 
-# Eval Start!!!!
 eval()

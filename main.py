@@ -22,7 +22,7 @@ import logging
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
 parser.add_argument('--upscale_factor', type=int, default=4,
                     help="super resolution upscale factor")
-parser.add_argument('--batchSize', type=int, default=8,
+parser.add_argument('--batchSize', type=int, default=4,
                     help='training batch size')
 parser.add_argument('--testBatchSize', type=int,
                     default=5, help='testing batch size')
@@ -38,16 +38,18 @@ parser.add_argument('--threads', type=int, default=8,
                     help='number of threads for data loader to use')
 parser.add_argument('--seed', type=int, default=123,
                     help='random seed to use. Default=123')
-parser.add_argument('--gpus', default=2, type=int, help='number of gpu')
-parser.add_argument('--data_dir', type=str,
+# parser.add_argument('--gpus', default=2, type=int, help='number of gpu')
+parser.add_argument('--HR_dir', type=str,
                     default='../datasets/ntire21/train/train_sharp/')
-parser.add_argument('--file_list', type=str, default='train.txt')
+parser.add_argument('--LR_dir', type=str,
+                    default='../datasets/ntire21/train/train_sharp_bicubic/X4')
+parser.add_argument('--file_list', type=str, default='NTIRE21/train.txt')
 parser.add_argument('--other_dataset', type=bool, default=True,
                     help="use other dataset than vimeo-90k")
 parser.add_argument('--future_frame', type=bool,
                     default=True, help="use future frame")
-parser.add_argument('--nFrames', type=int, default=7)
-parser.add_argument('--patch_size', type=int, default=32,
+parser.add_argument('--nFrames', type=int, default=5)
+parser.add_argument('--patch_size', type=int, default=64,
                     help='0 to use original frame size')
 parser.add_argument('--data_augmentation', type=bool, default=True)
 parser.add_argument('--model_type', type=str, default='RBPN')
@@ -57,49 +59,50 @@ parser.add_argument('--pretrained_sr', default='3x_dl10VDBPNF7_epoch_84.pth',
 parser.add_argument('--pretrained', type=bool, default=False)
 parser.add_argument('--save_folder', default='weights/',
                     help='Location to save checkpoint models')
-parser.add_argument('--prefix', default='F7',
+parser.add_argument('--prefix', default='F5',
                     help='Location to save checkpoint models')
 
 opt = parser.parse_args()
 # gpus_list = range(opt.gpus)
-gpus_list = [0, 2]
+gpus_list = [1, 3]
 hostname = str(socket.gethostname())
 cudnn.benchmark = True
 
-utils.setup_logger('base', 'log', 'train',
+utils.setup_logger('base', 'log/train', 'train_' + opt.prefix,
                    level=logging.INFO, screen=True, tofile=True)
 logger = logging.getLogger('base')
 
 logger.info(opt)
+logger.info("GPUs: {}, Frames: {}, PatchSize: {}".format(str(gpus_list), str(opt.nFrames), str(opt.patch_size)))
 
 
 def train(epoch):
     epoch_loss = 0
     model.train()
-    for iteration, batch in enumerate(tqdm(training_data_loader, desc="Epoch {} ".format(epoch), ncols=10), 1):
-        input, target, neigbor, flow, bicubic = batch[0], batch[1], batch[2], batch[3], batch[4]
-        if cuda:
-            input = Variable(input).cuda(gpus_list[0])
-            target = Variable(target).cuda(gpus_list[0])
-            bicubic = Variable(bicubic).cuda(gpus_list[0])
-            neigbor = [Variable(j).cuda(gpus_list[0]) for j in neigbor]
-            flow = [Variable(j).cuda(gpus_list[0]).float() for j in flow]
+    with tqdm(training_data_loader, desc="Epoch {} ".format(epoch), ncols=120) as t:
+        for iteration, batch in enumerate(t, 1):
+            input, target, neigbor, flow = batch[0], batch[1], batch[2], batch[3]
+            if cuda:
+                input = Variable(input).cuda(gpus_list[0])
+                target = Variable(target).cuda(gpus_list[0])
+                # bicubic = Variable(bicubic).cuda(gpus_list[0])
+                neigbor = [Variable(j).cuda(gpus_list[0]) for j in neigbor]
+                flow = [Variable(j).cuda(gpus_list[0]).float() for j in flow]
 
-        optimizer.zero_grad()
-        t0 = time.time()
-        prediction = model(input, neigbor, flow)
+            optimizer.zero_grad()
+            # t0 = time.time()
+            prediction = model(input, neigbor, flow)
 
-        if opt.residual:
-            prediction = prediction + bicubic
+            # if opt.residual:
+            #     prediction = prediction + bicubic
 
-        loss = criterion(prediction, target)
-        t1 = time.time()
-        epoch_loss += loss.data
-        loss.backward()
-        optimizer.step()
+            loss = criterion(prediction, target)
+            # t1 = time.time()
+            epoch_loss += loss.data
+            loss.backward()
+            optimizer.step()
 
-        # logger.info("===> Epoch[{}]({}/{}): Loss: {:.4f} || Timer: {:.4f} sec.".format(
-        #     epoch, iteration, len(training_data_loader), loss.item(), (t1 - t0)))
+            t.set_postfix(Loss=loss.item())
 
     logger.info("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(
         epoch, epoch_loss / len(training_data_loader)))
@@ -114,9 +117,13 @@ def print_network(net):
 
 
 def checkpoint(epoch):
-    model_out_path = opt.save_folder + \
-        str(opt.upscale_factor)+'x_'+hostname+opt.model_type + \
-        opt.prefix+"_epoch_{}.pth".format(epoch)
+    ck_name = opt.model_type + "_Epoch_{}.pth".format(epoch)
+    ck_path = os.path.join(opt.save_folder, opt.prefix)
+
+    if not os.path.exists(ck_path):
+        os.makedirs(ck_path)
+    
+    model_out_path = os.path.join(ck_path, ck_name)
     torch.save(model.state_dict(), model_out_path)
     logger.info("Checkpoint saved to {}".format(model_out_path))
 
@@ -130,7 +137,7 @@ if cuda:
     torch.cuda.manual_seed(opt.seed)
 
 logger.info('===> Loading datasets')
-train_set = get_training_set(opt.data_dir, opt.nFrames, opt.upscale_factor, opt.data_augmentation,
+train_set = get_training_set(opt.LR_dir, opt.HR_dir, opt.nFrames, opt.upscale_factor, opt.data_augmentation,
                              opt.file_list, opt.other_dataset, opt.patch_size, opt.future_frame)
 training_data_loader = DataLoader(
     dataset=train_set, num_workers=opt.threads, batch_size=opt.batchSize, shuffle=True)
@@ -175,4 +182,4 @@ for epoch in range(opt.start_epoch, opt.nEpochs + 1):
     if (epoch+1) % (opt.snapshots) == 0:
         checkpoint(epoch)
 
-utils.email_notification("isongxw@foxmail.com", "Train Finished")
+utils.email_notification("isongxw@foxmail.com", "Train Finished", "RBPN")
