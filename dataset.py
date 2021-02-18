@@ -50,14 +50,12 @@ def load_img(filepath, nFrames, scale, other_dataset):
     return target, input, neigbor
 
 
-def load_img_future(filepath, nFrames, scale, other_dataset):
+def load_img_future(HR_filepath, LR_filepath, nFrames, scale, other_dataset):
     tt = int(nFrames/2)
     if other_dataset:
-        target = modcrop(Image.open(filepath).convert('RGB'), scale)
-        input = target.resize(
-            (int(target.size[0]/scale), int(target.size[1]/scale)), Image.BICUBIC)
+        target = modcrop(Image.open(HR_filepath).convert('RGB'), scale)
+        input = modcrop(Image.open(LR_filepath).convert('RGB'), scale)
 
-        char_len = len(filepath)
         neigbor = []
         if nFrames % 2 == 0:
             # or seq = [x for x in range(-tt+1,tt+1) if x!=0]
@@ -66,12 +64,11 @@ def load_img_future(filepath, nFrames, scale, other_dataset):
             seq = [x for x in range(-tt, tt+1) if x != 0]
         # random.shuffle(seq) #if random sequence
         for i in seq:
-            index1 = int(filepath[char_len-7:char_len-4])+i
-            file_name1 = filepath[0:char_len-7]+'{0:03d}'.format(index1)+'.png'
-            
+            index1 = int(LR_filepath[-7: -4])+i
+            file_name1 = LR_filepath[0: -7]+'{0:03d}'.format(index1)+'.png'
+
             if os.path.exists(file_name1):
-                temp = modcrop(Image.open(file_name1).convert('RGB'), scale).resize(
-                    (int(target.size[0]/scale), int(target.size[1]/scale)), Image.BICUBIC)
+                temp = modcrop(Image.open(file_name1).convert('RGB'), scale)
                 neigbor.append(temp)
             else:
                 # print('neigbor frame- is not exist')
@@ -80,14 +77,14 @@ def load_img_future(filepath, nFrames, scale, other_dataset):
 
     else:
         target = modcrop(Image.open(
-            join(filepath, 'im4.png')).convert('RGB'), scale)
+            join(HR_filepath, 'im4.png')).convert('RGB'), scale)
         input = target.resize(
             (int(target.size[0]/scale), int(target.size[1]/scale)), Image.BICUBIC)
         neigbor = []
         seq = [x for x in range(4-tt, 5+tt) if x != 4]
         # random.shuffle(seq) #if random sequence
         for j in seq:
-            neigbor.append(modcrop(Image.open(filepath+'/im'+str(j)+'.png').convert('RGB'),
+            neigbor.append(modcrop(Image.open(HR_filepath+'/im'+str(j)+'.png').convert('RGB'),
                                    scale).resize((int(target.size[0]/scale), int(target.size[1]/scale)), Image.BICUBIC))
     return target, input, neigbor
 
@@ -189,11 +186,12 @@ def rescale_img(img_in, scale):
 
 
 class DatasetFromFolder(data.Dataset):
-    def __init__(self, image_dir, nFrames, upscale_factor, data_augmentation, file_list, other_dataset, patch_size, future_frame, transform=None):
+    def __init__(self, LR_dir, HR_dir, nFrames, upscale_factor, data_augmentation, file_list, other_dataset, patch_size, future_frame, transform=None):
         super(DatasetFromFolder, self).__init__()
-        
-        alist = [line.rstrip() for line in open(join(image_dir, file_list))]
-        self.image_filenames = [join(image_dir, x) for x in alist]
+
+        alist = [line.rstrip() for line in open(file_list)]
+        self.HR_filenames = [join(HR_dir, x) for x in alist]
+        self.LR_filenames = [join(LR_dir, x) for x in alist]
         self.nFrames = nFrames
         self.upscale_factor = upscale_factor
         self.transform = transform
@@ -205,7 +203,7 @@ class DatasetFromFolder(data.Dataset):
     def __getitem__(self, index):
         if self.future_frame:
             target, input, neigbor = load_img_future(
-                self.image_filenames[index], self.nFrames, self.upscale_factor, self.other_dataset)
+                self.HR_filenames[index], self.LR_filenames[index], self.nFrames, self.upscale_factor, self.other_dataset)
         else:
             target, input, neigbor = load_img(
                 self.image_filenames[index], self.nFrames, self.upscale_factor, self.other_dataset)
@@ -219,26 +217,27 @@ class DatasetFromFolder(data.Dataset):
 
         flow = [get_flow(input, j) for j in neigbor]
 
-        bicubic = rescale_img(input, self.upscale_factor)
+        # bicubic = rescale_img(input, self.upscale_factor)
 
         if self.transform:
             target = self.transform(target)
             input = self.transform(input)
-            bicubic = self.transform(bicubic)
+            # bicubic = self.transform(bicubic)
             neigbor = [self.transform(j) for j in neigbor]
             flow = [torch.from_numpy(j.transpose(2, 0, 1)) for j in flow]
 
-        return input, target, neigbor, flow, bicubic
+        return input, target, neigbor, flow
 
     def __len__(self):
-        return len(self.image_filenames)
+        return len(self.HR_filenames)
 
 
 class DatasetFromFolderTest(data.Dataset):
-    def __init__(self, image_dir, nFrames, upscale_factor, file_list, other_dataset, future_frame, transform=None):
+    def __init__(self, LR_dir, HR_dir, nFrames, upscale_factor, file_list, other_dataset, future_frame, transform=None):
         super(DatasetFromFolderTest, self).__init__()
-        alist = [line.rstrip() for line in open(join(image_dir, file_list))]
-        self.image_filenames = [join(image_dir, x) for x in alist]
+        alist = [line.rstrip() for line in open(file_list)]
+        self.HR_filenames = [join(HR_dir, x) for x in alist]
+        self.LR_filenames = [join(LR_dir, x) for x in alist]
         self.nFrames = nFrames
         self.upscale_factor = upscale_factor
         self.transform = transform
@@ -246,9 +245,12 @@ class DatasetFromFolderTest(data.Dataset):
         self.future_frame = future_frame
 
     def __getitem__(self, index):
+
+        filename = self.HR_filenames[index]
+
         if self.future_frame:
             target, input, neigbor = load_img_future(
-                self.image_filenames[index], self.nFrames, self.upscale_factor, self.other_dataset)
+                self.HR_filenames[index], self.LR_filenames[index], self.nFrames, self.upscale_factor, self.other_dataset)
         else:
             target, input, neigbor = load_img(
                 self.image_filenames[index], self.nFrames, self.upscale_factor, self.other_dataset)
@@ -264,7 +266,7 @@ class DatasetFromFolderTest(data.Dataset):
             neigbor = [self.transform(j) for j in neigbor]
             flow = [torch.from_numpy(j.transpose(2, 0, 1)) for j in flow]
 
-        return input, target, neigbor, flow, bicubic
+        return input, target, neigbor, flow, bicubic, filename
 
     def __len__(self):
-        return len(self.image_filenames)
+        return len(self.HR_filenames)
