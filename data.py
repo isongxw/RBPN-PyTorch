@@ -1,9 +1,4 @@
-from os.path import exists, join, basename
-from os import makedirs, remove
-from six.moves import urllib
-import tarfile
 from torchvision.transforms import Compose, ToTensor
-
 from dataset import DatasetFromFolderTest, DatasetFromFolder
 
 

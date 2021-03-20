@@ -1,7 +1,5 @@
 from __future__ import print_function
 import argparse
-from math import log10
-
 import utils
 import os
 import torch
@@ -11,12 +9,11 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from rbpn import Net as RBPN
-from data import get_training_set, get_eval_set
-import pdb
+from data import get_training_set
 import socket
-import time
 from tqdm import tqdm
 import logging
+from loss import CharbonnierLoss
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
@@ -31,7 +28,7 @@ parser.add_argument('--start_epoch', type=int, default=1,
 parser.add_argument('--nEpochs', type=int, default=150,
                     help='number of epochs to train for')
 parser.add_argument('--snapshots', type=int, default=10, help='Snapshots')
-parser.add_argument('--lr', type=float, default=1e-4,
+parser.add_argument('--lr', type=float, default=5e-5,
                     help='Learning Rate. Default=0.01')
 parser.add_argument('--gpu_mode', type=bool, default=True)
 parser.add_argument('--threads', type=int, default=8,
@@ -54,17 +51,17 @@ parser.add_argument('--patch_size', type=int, default=64,
 parser.add_argument('--data_augmentation', type=bool, default=True)
 parser.add_argument('--model_type', type=str, default='RBPN')
 parser.add_argument('--residual', type=bool, default=False)
-parser.add_argument('--pretrained_sr', default='3x_dl10VDBPNF7_epoch_84.pth',
+parser.add_argument('--pretrained_sr', default='PreTrain11/RBPN_Epoch_49.pth',
                     help='sr pretrained base model')
 parser.add_argument('--pretrained', type=bool, default=False)
 parser.add_argument('--save_folder', default='weights/',
                     help='Location to save checkpoint models')
-parser.add_argument('--prefix', default='F5',
+parser.add_argument('--prefix', default='Test',
                     help='Location to save checkpoint models')
 
 opt = parser.parse_args()
 # gpus_list = range(opt.gpus)
-gpus_list = [1, 3]
+gpus_list = [0,1]
 hostname = str(socket.gethostname())
 cudnn.benchmark = True
 
@@ -73,7 +70,8 @@ utils.setup_logger('base', 'log/train', 'train_' + opt.prefix,
 logger = logging.getLogger('base')
 
 logger.info(opt)
-logger.info("GPUs: {}, Frames: {}, PatchSize: {}".format(str(gpus_list), str(opt.nFrames), str(opt.patch_size)))
+logger.info("GPUs: {}, Frames: {}, PatchSize: {}".format(
+    str(gpus_list), str(opt.nFrames), str(opt.patch_size)))
 
 
 def train(epoch):
@@ -95,7 +93,6 @@ def train(epoch):
 
             # if opt.residual:
             #     prediction = prediction + bicubic
-
             loss = criterion(prediction, target)
             # t1 = time.time()
             epoch_loss += loss.data
@@ -103,7 +100,7 @@ def train(epoch):
             optimizer.step()
 
             t.set_postfix(Loss=loss.item())
-
+    print(epoch_loss, len(training_data_loader))
     logger.info("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(
         epoch, epoch_loss / len(training_data_loader)))
 
@@ -122,7 +119,7 @@ def checkpoint(epoch):
 
     if not os.path.exists(ck_path):
         os.makedirs(ck_path)
-    
+
     model_out_path = os.path.join(ck_path, ck_name)
     torch.save(model.state_dict(), model_out_path)
     logger.info("Checkpoint saved to {}".format(model_out_path))
@@ -149,6 +146,7 @@ if opt.model_type == 'RBPN':
 
 model = torch.nn.DataParallel(model, device_ids=gpus_list)
 criterion = nn.L1Loss()
+# criterion = nn.MSELoss()
 
 logger.info('---------- Networks architecture -------------')
 print_network(model)
@@ -157,10 +155,11 @@ logger.info('----------------------------------------------')
 if opt.pretrained:
     model_name = os.path.join(opt.save_folder + opt.pretrained_sr)
     if os.path.exists(model_name):
-        #model= torch.load(model_name, map_location=lambda storage, loc: storage)
         model.load_state_dict(torch.load(
             model_name, map_location=lambda storage, loc: storage))
         logger.info('Pre-trained SR model is loaded.')
+    else:
+        logger.warning('Pre-trained SR model not found.')
 
 if cuda:
     model = model.cuda(gpus_list[0])

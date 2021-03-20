@@ -236,8 +236,12 @@ class DatasetFromFolderTest(data.Dataset):
     def __init__(self, LR_dir, HR_dir, nFrames, upscale_factor, file_list, other_dataset, future_frame, transform=None):
         super(DatasetFromFolderTest, self).__init__()
         alist = [line.rstrip() for line in open(file_list)]
-        self.HR_filenames = [join(HR_dir, x) for x in alist]
         self.LR_filenames = [join(LR_dir, x) for x in alist]
+        if HR_dir == '':
+            self.HR_filenames = self.LR_filenames
+        else:
+            self.HR_filenames = [join(HR_dir, x) for x in alist]
+        
         self.nFrames = nFrames
         self.upscale_factor = upscale_factor
         self.transform = transform

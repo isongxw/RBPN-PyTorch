@@ -1,22 +1,14 @@
 from __future__ import print_function
 import argparse
-
 import os
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from rbpn import Net as RBPN
 from data import get_test_set
-from functools import reduce
-import numpy as np
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
-import scipy.io as sio
 import time
 import cv2
-import math
-import pdb
 import logging
 import utils
 
@@ -25,34 +17,34 @@ parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
 parser.add_argument('--upscale_factor', type=int, default=4,
                     help="super resolution upscale factor")
 parser.add_argument('--testBatchSize', type=int,
-                    default=1, help='testing batch size')
+                    default=20, help='testing batch size')
 parser.add_argument('--gpu_mode', type=bool, default=True)
-parser.add_argument('--chop_forward', type=bool, default=False)
-parser.add_argument('--threads', type=int, default=1,
+parser.add_argument('--chop_forward', type=bool, default=True)
+parser.add_argument('--threads', type=int, default=8,
                     help='number of threads for data loader to use')
 parser.add_argument('--seed', type=int, default=123,
                     help='random seed to use. Default=123')
 parser.add_argument('--gpus', default=1, type=int, help='number of gpu')
 parser.add_argument('--HR_dir', type=str,
-                    default='../datasets/ntire21/val/val_sharp')
+                    default='')
 parser.add_argument('--LR_dir', type=str,
-                    default='../datasets/ntire21/val/val_sharp_bicubic/X4')
-parser.add_argument('--file_list', type=str, default='NTIRE21/val.txt')
+                    default='../datasets/ntire21/test/test_sharp_bicubic/X4')
+parser.add_argument('--file_list', type=str, default='NTIRE21/test.txt')
 parser.add_argument('--other_dataset', type=bool, default=True,
                     help="use other dataset than vimeo-90k")
 parser.add_argument('--future_frame', type=bool,
                     default=True, help="use future frame")
-parser.add_argument('--nFrames', type=int, default=7)
+parser.add_argument('--nFrames', type=int, default=5)
 parser.add_argument('--model_type', type=str, default='RBPN')
 parser.add_argument('--residual', type=bool, default=False)
-parser.add_argument('--output', default='Results',
+parser.add_argument('--output', default='Final_Results',
                     help='Location to save checkpoint models')
-parser.add_argument('--model', default='weights/4x_N7_epoch_149.pth',
+parser.add_argument('--model', default='weights/F5/RBPN_Epoch_149.pth',
                     help='sr pretrained base model')
 
 opt = parser.parse_args()
 
-gpus_list = [3]
+gpus_list = [0,1]
 
 utils.setup_logger('base', 'log/test', 'test',
                    level=logging.INFO, screen=True, tofile=True)
@@ -96,11 +88,10 @@ def eval():
     avg_psnr_predicted = 0.0
     avg_ssim_predicted = 0.0
     avg_time_predicted = 0.0
+    # batch_size = opt.testBatchSize
     for batch in testing_data_loader:
-        input, target, neigbor, flow, bicubic, filename = batch[
-            0], batch[1], batch[2], batch[3], batch[4], batch[5][0]
-        cur_video = filename.split('/')[-2]
-        cur_frame = filename.split('/')[-1]
+        input, targets, neigbor, flow, bicubic, filename = batch[
+            0], batch[1], batch[2], batch[3], batch[4], batch[5]
 
         with torch.no_grad():
             input = Variable(input).cuda(gpus_list[0])
@@ -111,55 +102,51 @@ def eval():
         t0 = time.time()
         if opt.chop_forward:
             with torch.no_grad():
-                prediction = chop_forward(
+                predictions = chop_forward(
                     input, neigbor, flow, model, opt.upscale_factor)
         else:
             with torch.no_grad():
-                prediction = model(input, neigbor, flow)
-
-        if opt.residual:
-            prediction = prediction + bicubic
+                predictions = model(input, neigbor, flow)
 
         t1 = time.time()
+        time_predicted = (t1 - t0) / len(predictions)
+        
+        for i in range(len(predictions)):
+            cur_video = filename[i].split('/')[-2]
+            cur_frame = filename[i].split('/')[-1]
+            prediction = utils.tensor2img(predictions[i])
 
-        save_img(prediction.cpu().data, cur_video + '_' + cur_frame, False)
+            save_img(prediction, cur_video + '_' + cur_frame, False)
+            avg_time_predicted += time_predicted
+            count += 1
 
-        prediction = utils.tensor2img(prediction)
-
-        target = utils.tensor2img(target)
-
-        psnr_predicted = PSNR(target, prediction)
-        ssim_predicted = SSIM(target, prediction)
-        time_predicted = t1 - t0
-        avg_psnr_predicted += psnr_predicted
-        avg_ssim_predicted += ssim_predicted
-        avg_time_predicted += time_predicted
-        count += 1
-
-        logger.info("Processing: %s || PSNR: %.4f || SSIM: %.4f || Timer: %.4f sec." %
-                    (cur_video + '_' + cur_frame, psnr_predicted, ssim_predicted, time_predicted))
-
-    logger.info("AVG_PSNR = {}".format(avg_psnr_predicted / count))
-    logger.info("AVG_SSIM = {}".format(avg_ssim_predicted / count))
+            if opt.HR_dir != '':
+                target = utils.tensor2img(targets[i])
+                psnr_predicted = PSNR(target, prediction)
+                ssim_predicted = SSIM(target, prediction)
+                
+                avg_psnr_predicted += psnr_predicted
+                avg_ssim_predicted += ssim_predicted
+                
+                logger.info("Processing: %s || PSNR: %.4f || SSIM: %.4f || Timer: %.4f sec." %
+                            (cur_video + '_' + cur_frame, psnr_predicted, ssim_predicted, time_predicted))
+            else:
+                logger.info("Processing: %s || Timer: %.4f sec." % (cur_video + '_' + cur_frame, time_predicted))
+    if opt.HR_dir != '':
+        logger.info("AVG_PSNR = {}".format(avg_psnr_predicted / count))
+        logger.info("AVG_SSIM = {}".format(avg_ssim_predicted / count))
+    
     logger.info("AVG_TIME = {}".format(avg_time_predicted / count))
 
 
 def save_img(img, img_name, pred_flag):
-    save_img = img.squeeze().clamp(0, 1).numpy().transpose(1, 2, 0)
-
     # save img
     save_dir = opt.output
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    if pred_flag:
-        save_fn = save_dir + '/' + img_name+'_' + \
-            opt.model_type+'F'+str(opt.nFrames)+'.png'
-    else:
-        save_fn = save_dir + '/' + img_name
-
-    cv2.imwrite(save_fn, cv2.cvtColor(
-        save_img*255, cv2.COLOR_BGR2RGB),  [cv2.IMWRITE_PNG_COMPRESSION, 0])
+    save_fn = save_dir + '/' + img_name
+    cv2.imwrite(save_fn, img)
 
 
 def PSNR(res_img, ref_img):
